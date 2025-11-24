@@ -1,6 +1,6 @@
 {
   "name": "@libsrcdev/gatsby-remark-structured-content",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "This plugin helps building thumbnails, covers, heros, carousel features from remark content.",
   "keywords": [
     "gatsby",
