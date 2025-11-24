@@ -2,12 +2,14 @@
   "include": ["src", "types", "test", "gatsby-node.ts"],
   "compilerOptions": {
     "target": "es5",
-    "module": "esnext",
+    "module": "nodenext",
     "lib": ["dom", "esnext"],
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
     "rootDir": "./",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -19,7 +21,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "baseUrl": "./",
     "paths": {
       "*": ["src/*", "node_modules/*"]

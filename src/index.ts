@@ -2,7 +2,7 @@ import { createRemoteFileNode } from "gatsby-source-filesystem";
 import { visit, EXIT } from "unist-util-visit";
 import type { Node as UnistNode, Parent as UnistParent } from "unist";
 import type { Image } from "mdast";
-import { RemarkPluginApi, RemarkStructuredContentTransformer, StructuredContentPluginOptions as RemarkStructuredContentPluginOptions, TransformerContext } from "./types";
+import { RemarkPluginApi, RemarkStructuredContentTransformer, StructuredContentPluginOptions as RemarkStructuredContentPluginOptions, TransformerContext } from "./types.ts";
 
 
 /**
@@ -30,10 +30,14 @@ export function createImageExtractorTransformer(): RemarkStructuredContentTransf
   };
 }
 
+export type CreateThumbnailImageTransformerOptions = {
+  keepImageInMdAST: boolean;
+};
+
 /**
  * Extract a single "thumbnail" image with special rules, then remove it from the AST.
  */
-export function createThumbnailImageTransformer(): RemarkStructuredContentTransformer<Image> {
+export function createThumbnailImageTransformer({ keepImageInMdAST }: CreateThumbnailImageTransformerOptions): RemarkStructuredContentTransformer<Image> {
   return {
     createSchemaCustomization: ({ actions }) => {
       const { createTypes } = actions;
@@ -53,7 +57,12 @@ export function createThumbnailImageTransformer(): RemarkStructuredContentTransf
     },
     transform: async (node, { saveNodeToFile, removeNodeFromMdAST }) => {
       await saveNodeToFile(node, { isThumbnail: true });
-      await removeNodeFromMdAST(node);
+
+      if (keepImageInMdAST === true) {
+        // do nothing, keep the node in the AST
+      } else {
+        await removeNodeFromMdAST(node);
+      }
     },
   };
 }
