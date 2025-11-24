@@ -9,7 +9,6 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  copy: ["package.json", "package.json"],
   platform: "node",
   unbundle: false,
   target: "node25",
