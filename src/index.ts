@@ -31,7 +31,7 @@ export function createImageExtractorTransformer(): RemarkStructuredContentTransf
 }
 
 export type CreateThumbnailImageTransformerOptions = {
-  keepImageInMdAST: boolean;
+  keepImageInMdAST?: boolean;
 };
 
 /**
