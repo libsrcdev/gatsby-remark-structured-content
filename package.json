@@ -23,8 +23,7 @@
   },
   "license": "MIT",
   "author": "@libsrcdev",
-  "type": "module",
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "files": [
     "dist"
   ],
@@ -57,19 +56,5 @@
     "semi": true,
     "singleQuote": true,
     "trailingComma": "es5"
-  },
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.cts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    },
-    "./gatsby-node": {
-      "import": "./dist/gatsby-node.mjs",
-      "require": "./dist/gatsby-node.cjs"
-    },
-    "./package.json": "./package.json",
-    "./foo": "./foo.js"
   }
 }

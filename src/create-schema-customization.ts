@@ -5,11 +5,14 @@ interface StructuredContentPluginOptions {
   transformers?: RemarkStructuredContentTransformer[];
 }
 
-export default async function createSchemaCustomization(
+export async function createSchemaCustomization(
   gatsbyNodeApis: CreateSchemaCustomizationArgs,
   pluginOptions: StructuredContentPluginOptions
 ): Promise<void> {
-  const { actions } = gatsbyNodeApis;
+  const { actions, reporter } = gatsbyNodeApis;
+
+  reporter.info("Starting createSchemaCustomization in remark-structured-content plugin");
+
   const { createTypes } = actions;
 
   const typeDefs = `
@@ -29,7 +32,7 @@ export default async function createSchemaCustomization(
   if (callbacks && callbacks.length > 0) {
     for (const callback of callbacks) {
       // Allow each transformer to extend types
-      await callback({ actions: gatsbyNodeApis.actions });
+      await callback({ ...gatsbyNodeApis });
     }
   }
 }

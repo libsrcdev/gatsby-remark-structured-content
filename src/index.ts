@@ -2,30 +2,37 @@ import { createRemoteFileNode } from "gatsby-source-filesystem";
 import { visit, EXIT } from "unist-util-visit";
 import type { Node as UnistNode, Parent as UnistParent } from "unist";
 import type { Image } from "mdast";
-import { RemarkPluginApi, RemarkStructuredContentTransformer, StructuredContentPluginOptions as RemarkStructuredContentPluginOptions, TransformerContext } from "./types.ts";
-
+import { RemarkPluginApi, RemarkStructuredContentTransformer, StructuredContentPluginOptions as RemarkStructuredContentPluginOptions, TransformerContext } from "./types";
 
 /**
  * Extract ALL images from the markdown AST and save them to File nodes.
  */
 export function createImageExtractorTransformer(): RemarkStructuredContentTransformer<Image> {
   return {
-    createSchemaCustomization: ({ actions }) => {
+    createSchemaCustomization: ({ reporter, actions, schema }) => {
       const { createTypes } = actions;
-      const typeDefs = `
+
+      reporter.info("Creating schema customization for createImageExtractorTransformer");
+
+      const typeDefs = [
+        `
         type MarkdownRemark implements Node {
-          embeddedImages: [File!] @link(by: "parent.id", from: "id")
+          embeddedImages: [File] @link(by: "fields.imageExtractedFromMarkdownRemarkId", from: "id")
         }
-      `;
+      `,
+      ]
+
       createTypes(typeDefs);
     },
     traverse: (markdownAST, _utils, context) => {
       getAllImagesFromMarkdownAST(markdownAST).forEach((imageNode) => {
-        context.scheduleTransformOf(imageNode);
+        context.collect(imageNode);
       });
     },
-    transform: async (node, { saveNodeToFile }) => {
-      await saveNodeToFile(node, { transformer: true });
+    transform: async (context, { createFileNode }, { markdownNode: markdownRemarkGatsbyNode }) => {
+      for (const node of context.collected) {
+        await createFileNode(node, { imageExtractedFromMarkdownRemarkId: markdownRemarkGatsbyNode.id });
+      }
     },
   };
 }
@@ -37,13 +44,17 @@ export type CreateThumbnailImageTransformerOptions = {
 /**
  * Extract a single "thumbnail" image with special rules, then remove it from the AST.
  */
-export function createThumbnailImageTransformer({ keepImageInMdAST }: CreateThumbnailImageTransformerOptions): RemarkStructuredContentTransformer<Image> {
+export function createThumbnailImageTransformer(options?: CreateThumbnailImageTransformerOptions): RemarkStructuredContentTransformer<Image> {
+  const { keepImageInMdAST } = options || {};
+
+  const LINK_FIELD_NAME = "thumbnailImage";
+
   return {
-    createSchemaCustomization: ({ actions }) => {
+    createSchemaCustomization: ({ actions, schema }) => {
       const { createTypes } = actions;
       const typeDefs = `
         type MarkdownRemark implements Node {
-          thumbnailImage: File @link(by: "parent.id", from: "id")
+          ${LINK_FIELD_NAME}: File @link(from: "fields.${LINK_FIELD_NAME}", by: "id")
         }
       `;
       createTypes(typeDefs);
@@ -52,16 +63,29 @@ export function createThumbnailImageTransformer({ keepImageInMdAST }: CreateThum
       const thumbImgNode = getThumbnailImageOnly(markdownAST);
 
       if (thumbImgNode) {
-        context.scheduleTransformOf(thumbImgNode);
+        context.collect(thumbImgNode);
       }
     },
-    transform: async (node, { saveNodeToFile, removeNodeFromMdAST }) => {
-      await saveNodeToFile(node, { isThumbnail: true });
+    transform: async (context, { createFileNode, removeNodeFromMdAST }, gatsbyApis) => {
+      const { markdownNode: markdownRemarkGatsbyNode, actions } = gatsbyApis;
+
+      const [thumbMdASTNode] = context.collected;
+
+      if (!thumbMdASTNode) {
+        // No thumbnail image found
+        return;
+      }
+
+      const { createNodeField } = actions;
+
+      const thumbImgGatsbyNode = await createFileNode(thumbMdASTNode);
+
+      createNodeField({ node: markdownRemarkGatsbyNode, name: LINK_FIELD_NAME, value: thumbImgGatsbyNode.id });
 
       if (keepImageInMdAST === true) {
         // do nothing, keep the node in the AST
       } else {
-        await removeNodeFromMdAST(node);
+        await removeNodeFromMdAST(thumbMdASTNode);
       }
     },
   };
@@ -79,17 +103,22 @@ export default async function remarkStructuredContentPlugin(
     markdownNode,
     getCache,
     actions,
+    reporter,
     createNodeId,
     ...rest
   } = remarkPluginApi;
 
+  reporter.info("Starting remark-structured-content plugin for a markdown node with id: " + markdownNode.id);
+
   const { createNode, createNodeField } = actions;
   const { transformers } = pluginOptions;
 
-  async function saveNodeToFile(
+  async function createFileNode(
     node: Image,
     extraFields: Record<string, unknown> = {}
   ) {
+    reporter.info(`Saving remote file node for image: ${node.url}`);
+
     const fileNode = await createRemoteFileNode({
       url: node.url,
       parentNodeId: markdownNode.id,
@@ -98,8 +127,10 @@ export default async function remarkStructuredContentPlugin(
       createNodeId,
     });
 
+    reporter.info(`Created file node with id: ${fileNode?.id} for image: ${node.url}`);
+
     for (const [key, value] of Object.entries(extraFields)) {
-      await createNodeField({ node: fileNode, name: key, value });
+      createNodeField({ node: fileNode, name: key, value });
     }
 
     return fileNode;
@@ -115,20 +146,19 @@ export default async function remarkStructuredContentPlugin(
   for (const transformer of transformers) {
     const context: TransformerContext<any> = {
       collected: [],
-      scheduleTransformOf(item) {
+      collect(item) {
         this.collected.push(item);
       },
+      meta: {},
     };
 
     transformer.traverse(markdownAST, { visit }, context);
 
-    for (const collectedItem of context.collected) {
-      await transformer.transform(
-        collectedItem,
-        { saveNodeToFile, removeNodeFromMdAST },
-        remarkPluginApi
-      );
-    }
+    await transformer.transform(
+      context,
+      { createFileNode, removeNodeFromMdAST },
+      remarkPluginApi,
+    );
   }
 
   return markdownAST;
@@ -157,6 +187,8 @@ function getThumbnailImageOnly(markdownAST: UnistNode): Image | null {
     markdownAST,
     "image",
     (node, index, parent) => {
+      thumbnailImage = node as Image;
+      return [EXIT];
       if (!parent || typeof index !== "number") {
         return;
       }
@@ -174,10 +206,15 @@ function getThumbnailImageOnly(markdownAST: UnistNode): Image | null {
 
       if (!hasTextBefore && !hasTextAfter) {
         thumbnailImage = node as Image;
-        return EXIT;
+        return [EXIT];
       }
     }
   );
 
   return thumbnailImage;
 }
+
+export { sourceNodes } from "./source-nodes";
+export { onCreateNode } from "./on-create-node";
+export { createSchemaCustomization } from "./create-schema-customization";
+export { pluginOptionsSchema } from "./plugin-options-schema";

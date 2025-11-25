@@ -1,26 +1,26 @@
-import type { Actions, PluginOptions } from "gatsby";
+import type { Actions, CreateSchemaCustomizationArgs, PluginOptions } from "gatsby";
 import { visit, EXIT } from "unist-util-visit";
 import type { Node as UnistNode, Parent as UnistParent } from "unist";
 import type { Image } from "mdast";
 
 export interface RemarkStructuredContentTransformer<T = any> {
-  createSchemaCustomization?: (args: { actions: Actions }) => void | Promise<void>;
+  createSchemaCustomization?: (args: CreateSchemaCustomizationArgs) => void | Promise<void>;
   traverse: (
     markdownAST: UnistNode,
     utils: { visit: typeof visit },
     context: TransformerContext<T>
   ) => void;
   transform: (
-    collected: T,
+    context: TransformerContext<T>,
     helpers: {
-      saveNodeToFile: (node: Image, extraFields?: Record<string, unknown>) => Promise<any>;
+      createFileNode: (node: Image, extraFields?: Record<string, unknown>) => Promise<any>;
       removeNodeFromMdAST: (node: UnistNode) => Promise<void>;
     },
     api: RemarkPluginApi
   ) => Promise<void>;
 }
 
-export interface RemarkPluginApi {
+export interface RemarkPluginApi extends CreateSchemaCustomizationArgs {
   markdownAST: UnistNode;
   markdownNode: any;
   getCache: (id: string) => any;
@@ -32,7 +32,8 @@ export interface RemarkPluginApi {
 
 export interface TransformerContext<T = any> {
   collected: T[];
-  scheduleTransformOf: (item: T) => void;
+  collect: (item: T) => void;
+  meta: Record<string, unknown>;
 }
 
 export interface StructuredContentPluginOptions extends PluginOptions {

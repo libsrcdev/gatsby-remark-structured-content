@@ -1,6 +1,6 @@
 import type { PluginOptionsSchemaArgs } from "gatsby";
 
-export default function pluginOptionsSchema(
+export function pluginOptionsSchema(
   { Joi }: PluginOptionsSchemaArgs
 ) {
   return Joi.object({});

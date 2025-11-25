@@ -2,11 +2,19 @@ import { defineConfig } from "tsdown";
 
 export default defineConfig({
   entry: {
-    "gatsby-node": "gatsby-node.ts",
     "index": "src/index.ts",
   },
-  format: ["cjs", "esm"],
+  format: ["cjs"],
   dts: true,
+  outExtensions: (c) => {
+    if (c.format === "cjs") {
+      return {
+        js: ".js",
+        dts: ".d.ts",
+      };
+    }
+    return undefined;
+  },
   clean: true,
   platform: "node",
   unbundle: false,

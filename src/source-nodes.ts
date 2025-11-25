@@ -1,7 +1,7 @@
 import type { SourceNodesArgs, PluginOptions } from "gatsby";
-import { RemarkPluginApi } from "./types.ts";
+import { RemarkPluginApi } from "./types";
 
-export default async function sourceNodes(
+export async function sourceNodes(
   gatsbyArgs: SourceNodesArgs,
   pluginOptions: RemarkPluginApi
 ): Promise<void> {

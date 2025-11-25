@@ -5,7 +5,7 @@ interface StructuredContentPluginOptions extends PluginOptions {
   // transformers?: Transformer[];
 }
 
-export default async function onCreateNode(
+export async function onCreateNode(
   ...args: [CreateNodeArgs, StructuredContentPluginOptions]
 ): Promise<void> {
   const [
