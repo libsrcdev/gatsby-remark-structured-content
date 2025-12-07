@@ -1,6 +1,6 @@
 import type { Actions, CreateSchemaCustomizationArgs, PluginOptions } from "gatsby";
-import { visit, EXIT } from "unist-util-visit";
-import type { Node as UnistNode, Parent as UnistParent } from "unist";
+import { visit } from "unist-util-visit";
+import type { Node as UnistNode } from "unist";
 import type { Image } from "mdast";
 
 export interface RemarkStructuredContentTransformer<T = any> {
@@ -13,12 +13,14 @@ export interface RemarkStructuredContentTransformer<T = any> {
   transform: (
     context: TransformerContext<T>,
     helpers: {
-      createFileNode: (node: Image, extraFields?: Record<string, unknown>) => Promise<any>;
+      createRemoteFileNodeWithFields: CreateRemoteFileNodeWithFields;
       removeNodeFromMdAST: (node: UnistNode) => Promise<void>;
     },
     api: RemarkPluginApi
   ) => Promise<void>;
 }
+
+export type CreateRemoteFileNodeWithFields = (mdastNode: Image, extraFields?: Record<string, unknown>, parentNodeId?: string) => Promise<any>;
 
 export interface RemarkPluginApi extends CreateSchemaCustomizationArgs {
   markdownAST: UnistNode;

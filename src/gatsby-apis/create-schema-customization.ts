@@ -1,5 +1,5 @@
 import type { CreateSchemaCustomizationArgs } from "gatsby";
-import type { RemarkStructuredContentTransformer } from "./types.ts"; // adjust path as needed
+import type { RemarkStructuredContentTransformer } from "../utils/types.js";
 
 interface StructuredContentPluginOptions {
   transformers?: RemarkStructuredContentTransformer[];

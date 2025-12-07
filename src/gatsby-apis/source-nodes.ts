@@ -1,5 +1,5 @@
 import type { SourceNodesArgs, PluginOptions } from "gatsby";
-import { RemarkPluginApi } from "./types";
+import { RemarkPluginApi } from "../utils/types";
 
 export async function sourceNodes(
   gatsbyArgs: SourceNodesArgs,
@@ -10,7 +10,6 @@ export async function sourceNodes(
     createContentDigest,
     createNodeId,
     getNodesByType,
+    reporter
   } = gatsbyArgs;
-
-  // ...
 }
