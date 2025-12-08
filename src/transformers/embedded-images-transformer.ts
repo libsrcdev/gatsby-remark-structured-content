@@ -6,7 +6,7 @@ import type { Image } from "mdast";
  * Extract ALL images from the markdown AST and save them to File nodes.
  */
 export function createImageExtractorTransformer(): RemarkStructuredContentTransformer<Image> {
-  const MarkdownRemarkEmbeddedImage = `MarkdownRemarkEmbeddedImage`
+  const MarkdownRemarkEmbeddedImageType = `MarkdownRemarkEmbeddedImage`
   return {
     createSchemaCustomization: ({ reporter, actions, schema }) => {
       const { createTypes } = actions;
@@ -18,11 +18,11 @@ export function createImageExtractorTransformer(): RemarkStructuredContentTransf
         type MarkdownRemark implements Node {
           id: ID!
         }
-        type ${MarkdownRemarkEmbeddedImage} implements Node @infer @childOf(types: ["MarkdownRemark"]) {
+        type ${MarkdownRemarkEmbeddedImageType} implements Node @infer @childOf(types: ["MarkdownRemark"]) {
           id: ID!
           url: String
         }
-        type File implements Node @infer @childOf(types: ["${MarkdownRemarkEmbeddedImage}"]) {
+        type File implements Node @infer @childOf(types: ["${MarkdownRemarkEmbeddedImageType}"]) {
           id: ID!
         }
       `,
@@ -43,7 +43,7 @@ export function createImageExtractorTransformer(): RemarkStructuredContentTransf
           createRemoteFileNodeWithFields: createRemoteFileNodeWithFields,
           gatsbyApis: gatsbyApis,
           mdastNode: imageMdastNode,
-          nodeType: MarkdownRemarkEmbeddedImage,
+          nodeType: MarkdownRemarkEmbeddedImageType,
           parentNode: markdownRemarkGatsbyNode,
         });
       }
