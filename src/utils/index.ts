@@ -86,7 +86,7 @@ export async function createMarkdownRemarkChildRemoteImageNode({
   const contentDigest = createContentDigest(content);
 
   const childImageNode: Node = {
-    id: createNodeId(`${nodeType} >>> ${parentNode.id}`),
+    id: createNodeId(`${nodeType} >>> ${parentNode.id} >>> ${contentDigest}`),
     parent: parentNode.id,
     children: [],
     url: mdastNode.url,
