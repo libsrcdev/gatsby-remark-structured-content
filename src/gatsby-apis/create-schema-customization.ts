@@ -7,21 +7,21 @@ interface StructuredContentPluginOptions {
 
 export async function createSchemaCustomization(
   gatsbyNodeApis: CreateSchemaCustomizationArgs,
-  pluginOptions: StructuredContentPluginOptions
+  pluginOptions: StructuredContentPluginOptions,
 ): Promise<void> {
   const { actions, reporter } = gatsbyNodeApis;
 
   reporter.info("Starting createSchemaCustomization in remark-structured-content plugin");
 
-  const { createTypes } = actions;
+  // const { createTypes } = actions;
 
-  const typeDefs = `
-    type MarkdownRemark implements Node {
-      structuredContent: [Node!] @link(by: "parent.id", from: "id")
-    }
-  `;
+  // const typeDefs = `
+  //   type MarkdownRemark implements Node {
+  //     structuredContent: [Node!] @link(by: "parent.id", from: "id")
+  //   }
+  // `;
 
-  createTypes(typeDefs);
+  // createTypes(typeDefs);
 
   // Collect transformer schema customization fns
   const callbacks =

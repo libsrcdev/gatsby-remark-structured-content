@@ -2,6 +2,11 @@ import type { Actions, CreateSchemaCustomizationArgs, PluginOptions } from "gats
 import { visit } from "unist-util-visit";
 import type { Node as UnistNode } from "unist";
 import type { Image } from "mdast";
+// Common parent type for image transformers
+export type TransformerParentType =
+  | "gatsby-transformer-remark"
+  | "gatsby-plugin-mdx"
+  | { customType: string };
 
 export interface RemarkStructuredContentTransformer<T = any> {
   createSchemaCustomization?: (args: CreateSchemaCustomizationArgs) => void | Promise<void>;

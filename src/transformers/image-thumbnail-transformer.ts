@@ -1,31 +1,49 @@
 import type { Image } from "mdast";
 import { createMarkdownRemarkChildRemoteImageNode, getThumbnailImageOnly } from "utils";
-import { RemarkStructuredContentTransformer } from "utils/types";
+
+import type { RemarkStructuredContentTransformer, TransformerParentType } from "utils/types";
 
 export type CreateThumbnailImageTransformerOptions = {
   keepImageInMdAST?: boolean;
+  parentType?: TransformerParentType;
 };
 
 /**
  * Extract a single "thumbnail" image with special rules, then remove it from the AST.
+ *
+ * @param options.parentType - One of:
+ *   - "gatsby-transformer-remark" (default: type MarkdownRemark)
+ *   - "gatsby-plugin-mdx" (type Mdx)
+ *   - { customType: string } (custom parent type)
  */
 export function createThumbnailImageTransformer(options?: CreateThumbnailImageTransformerOptions): RemarkStructuredContentTransformer<Image> {
-  const { keepImageInMdAST } = options || {};
+  const { keepImageInMdAST, parentType = "gatsby-transformer-remark" } = options || {};
 
-  const MarkdownRemarkThumbnailType = "MarkdownRemarkThumbnail";
+  let parentNodeType: string;
+  if (parentType === "gatsby-transformer-remark") {
+    parentNodeType = "MarkdownRemark";
+  } else if (parentType === "gatsby-plugin-mdx") {
+    parentNodeType = "Mdx";
+  } else if (typeof parentType === "object" && parentType.customType) {
+    parentNodeType = parentType.customType;
+  } else {
+    throw new Error("Invalid parentType for createThumbnailImageTransformer");
+  }
+
+  const ThumbnailType = `${parentNodeType}Thumbnail`;
 
   return {
     createSchemaCustomization: ({ actions, schema }) => {
       const { createTypes } = actions;
       const typeDefs = `
-        type MarkdownRemark implements Node {
+        type ${parentNodeType} implements Node {
           id: ID!
         }
-        type ${MarkdownRemarkThumbnailType} implements Node @infer @childOf(types: ["MarkdownRemark"]) {
+        type ${ThumbnailType} implements Node @infer @childOf(types: ["${parentNodeType}"]) {
           id: ID!
           url: String
         }
-        type File implements Node @infer @childOf(types: ["${MarkdownRemarkThumbnailType}"]) {
+        type File implements Node @infer @childOf(types: ["${ThumbnailType}"]) {
           id: ID!
         }
       `;
@@ -39,7 +57,7 @@ export function createThumbnailImageTransformer(options?: CreateThumbnailImageTr
       }
     },
     transform: async (context, { createRemoteFileNodeWithFields, removeNodeFromMdAST }, gatsbyApis) => {
-      const { markdownNode: markdownRemarkGatsbyNode } = gatsbyApis;
+      const { markdownNode: parentGatsbyNode } = gatsbyApis;
 
       const [thumbMdASTNode] = context.collected;
 
@@ -52,8 +70,8 @@ export function createThumbnailImageTransformer(options?: CreateThumbnailImageTr
         createRemoteFileNodeWithFields: createRemoteFileNodeWithFields,
         gatsbyApis: gatsbyApis,
         mdastNode: thumbMdASTNode,
-        nodeType: MarkdownRemarkThumbnailType,
-        parentNode: markdownRemarkGatsbyNode,
+        nodeType: ThumbnailType,
+        parentNode: parentGatsbyNode,
       });
 
       if (keepImageInMdAST === true) {
