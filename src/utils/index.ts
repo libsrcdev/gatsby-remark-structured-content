@@ -18,8 +18,6 @@ export function getAllImagesFromMarkdownAST(markdownAST: UnistNode): Image[] {
   return images;
 }
 
-/// Return an image node only if there is no text content before the image
-/// or if the content after the image is only whitespace
 export function getThumbnailImageOnly(markdownAST: UnistNode): Image | null {
   let thumbnailImage: Image | null = null;
 

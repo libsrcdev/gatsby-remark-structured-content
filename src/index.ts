@@ -1,10 +1,14 @@
-import { createRemoteFileNode } from "gatsby-source-filesystem";
-import { visit } from "unist-util-visit";
-import type { Node as UnistNode } from "unist";
-import type { Image } from "mdast";
-import { RemarkPluginApi, StructuredContentPluginOptions as RemarkStructuredContentPluginOptions, TransformerContext } from "./utils/types";
-import { removeNodeFromMdAST } from "utils";
-
+import { createRemoteFileNode } from 'gatsby-source-filesystem';
+import { visit } from 'unist-util-visit';
+import type { Node as UnistNode } from 'unist';
+import type { Image } from 'mdast';
+import {
+  RemarkPluginApi,
+  StructuredContentPluginOptions as RemarkStructuredContentPluginOptions,
+  TransformerContext,
+} from './utils/types';
+import { removeNodeFromMdAST } from 'utils';
+import { createRequestHttpHeaderBuilder } from 'custom-http-headers/http-header-trusted-provider';
 
 /**
  * Main remark plugin entrypoint.
@@ -20,10 +24,15 @@ export default async function remarkStructuredContentPlugin(
     actions,
     reporter,
     createNodeId,
+    dangerouslyBuildRequestHttpHeaders,
+    httpHeaderProviders,
     ...rest
   } = remarkPluginApi;
 
-  reporter.info("Starting remark-structured-content plugin for a markdown node with id: " + markdownNode.id);
+  reporter.info(
+    'Starting remark-structured-content plugin for a markdown node with id: ' +
+      markdownNode.id
+  );
 
   const { createNode, createNodeField } = actions;
   const { transformers } = pluginOptions;
@@ -33,17 +42,25 @@ export default async function remarkStructuredContentPlugin(
     extraFields: Record<string, unknown> = {},
     parentNodeId?: string
   ) {
-    reporter.info(`Saving remote file node for image: ${mdastNode.url}`);
+    const imageUrl = mdastNode.url;
+
+    reporter.info(`Saving remote file node for image: ${imageUrl}`);
 
     const fileNode = await createRemoteFileNode({
-      url: mdastNode.url,
+      url: imageUrl,
       parentNodeId: parentNodeId,
       getCache,
       createNode,
       createNodeId,
+      httpHeaders: createRequestHttpHeaderBuilder({
+        httpHeaderProviders,
+        dangerouslyBuildRequestHttpHeaders,
+      })(imageUrl),
     });
 
-    reporter.info(`Created file node with id: ${fileNode?.id} for image: ${mdastNode.url}`);
+    reporter.info(
+      `Created file node with id: ${fileNode?.id} for image: ${mdastNode.url}`
+    );
 
     for (const [key, value] of Object.entries(extraFields)) {
       createNodeField({ node: fileNode, name: key, value });
@@ -66,16 +83,15 @@ export default async function remarkStructuredContentPlugin(
     await transformer.transform(
       context,
       { createRemoteFileNodeWithFields, removeNodeFromMdAST },
-      remarkPluginApi,
+      remarkPluginApi
     );
   }
 
   return markdownAST;
 }
 
-
-export { sourceNodes } from "./gatsby-apis/source-nodes";
-export { onCreateNode } from "./gatsby-apis/on-create-node";
-export { createSchemaCustomization } from "./gatsby-apis/create-schema-customization";
-export { pluginOptionsSchema } from "./gatsby-apis/plugin-options-schema";
-export * from "./transformers/index";
+export { sourceNodes } from './gatsby-apis/source-nodes';
+export { onCreateNode } from './gatsby-apis/on-create-node';
+export { createSchemaCustomization } from './gatsby-apis/create-schema-customization';
+export { pluginOptionsSchema } from './gatsby-apis/plugin-options-schema';
+export * from './transformers/index';
