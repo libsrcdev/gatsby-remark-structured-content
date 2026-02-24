@@ -51,7 +51,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: \@${{ github.repository_owner }}
 
-      - name: Update npm
+      - name: Update yarn
         run: npm install --global yarn
 
       - name: Install dependencies
