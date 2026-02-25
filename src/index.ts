@@ -4,11 +4,10 @@ import type { Node as UnistNode } from 'unist';
 import type { Image } from 'mdast';
 import {
   RemarkPluginApi,
-  StructuredContentPluginOptions as RemarkStructuredContentPluginOptions,
+  RemarkStructuredContentPluginOptions,
   TransformerContext,
 } from './utils/types';
 import { removeNodeFromMdAST } from 'utils';
-import { createRequestHttpHeaderBuilder } from 'custom-http-headers/http-header-trusted-provider';
 
 /**
  * Main remark plugin entrypoint.
@@ -24,9 +23,6 @@ export default async function remarkStructuredContentPlugin(
     actions,
     reporter,
     createNodeId,
-    dangerouslyBuildRequestHttpHeaders,
-    httpHeaderProviders,
-    ...rest
   } = remarkPluginApi;
 
   reporter.info(
@@ -35,12 +31,15 @@ export default async function remarkStructuredContentPlugin(
   );
 
   const { createNode, createNodeField } = actions;
-  const { transformers } = pluginOptions;
+  const {
+    transformers,
+  } = pluginOptions;
 
   async function createRemoteFileNodeWithFields(
     mdastNode: Image,
     extraFields: Record<string, unknown> = {},
-    parentNodeId?: string
+    parentNodeId?: string,
+    httpHeaders?: Record<string, string>
   ) {
     const imageUrl = mdastNode.url;
 
@@ -52,10 +51,7 @@ export default async function remarkStructuredContentPlugin(
       getCache,
       createNode,
       createNodeId,
-      httpHeaders: createRequestHttpHeaderBuilder({
-        httpHeaderProviders,
-        dangerouslyBuildRequestHttpHeaders,
-      })(imageUrl),
+      httpHeaders,
     });
 
     reporter.info(
@@ -82,7 +78,7 @@ export default async function remarkStructuredContentPlugin(
 
     await transformer.transform(
       context,
-      { createRemoteFileNodeWithFields, removeNodeFromMdAST },
+      { createRemoteFileNodeWithFields, removeNodeFromMdAST, pluginOptions },
       remarkPluginApi
     );
   }
