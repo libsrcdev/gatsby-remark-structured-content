@@ -91,3 +91,6 @@ export { onCreateNode } from './gatsby-apis/on-create-node';
 export { createSchemaCustomization } from './gatsby-apis/create-schema-customization';
 export { pluginOptionsSchema } from './gatsby-apis/plugin-options-schema';
 export * from './transformers/index';
+export * from './custom-http-headers/http-header-trusted-provider';
+export * from './custom-http-headers/http-request-header-options';
+export * from './custom-http-headers/is-trusted-url';
