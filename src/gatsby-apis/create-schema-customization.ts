@@ -1,38 +1,33 @@
-import type { CreateSchemaCustomizationArgs } from "gatsby";
-import type { RemarkStructuredContentTransformer } from "../utils/types.js";
-
-interface StructuredContentPluginOptions {
-  transformers?: RemarkStructuredContentTransformer[];
-}
+import type { CreateSchemaCustomizationArgs } from 'gatsby';
+import type { RemarkStructuredContentPluginOptions } from '../utils/types.js';
 
 export async function createSchemaCustomization(
   gatsbyNodeApis: CreateSchemaCustomizationArgs,
-  pluginOptions: StructuredContentPluginOptions,
+  pluginOptions: RemarkStructuredContentPluginOptions
 ): Promise<void> {
-  const { actions, reporter } = gatsbyNodeApis;
+  const { reporter } = gatsbyNodeApis;
 
-  reporter.info("Starting createSchemaCustomization in remark-structured-content plugin");
-
-  // const { createTypes } = actions;
-
-  // const typeDefs = `
-  //   type MarkdownRemark implements Node {
-  //     structuredContent: [Node!] @link(by: "parent.id", from: "id")
-  //   }
-  // `;
-
-  // createTypes(typeDefs);
+  reporter.info(`[remark-structured-content] createSchemaCustomization called`);
 
   // Collect transformer schema customization fns
-  const callbacks =
-    pluginOptions.transformers
-      ?.map((t) => t.createSchemaCustomization)
-      .filter((fn): fn is NonNullable<typeof fn> => Boolean(fn));
+  const callbacks = pluginOptions.transformers
+    ?.map((t) => t.createSchemaCustomization)
+    .filter((fn): fn is NonNullable<typeof fn> => Boolean(fn));
 
   if (callbacks && callbacks.length > 0) {
+    reporter.verbose(
+      `[remark-structured-content] Running ${callbacks.length} transformer schema customization callback(s)`
+    );
     for (const callback of callbacks) {
       // Allow each transformer to extend types
-      await callback({ ...gatsbyNodeApis });
+      await callback(gatsbyNodeApis, pluginOptions);
     }
+    reporter.verbose(
+      `[remark-structured-content] Schema customization callbacks complete`
+    );
+  } else {
+    reporter.verbose(
+      `[remark-structured-content] No transformer schema customization callbacks to run`
+    );
   }
 }

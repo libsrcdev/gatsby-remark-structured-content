@@ -53,8 +53,13 @@ export function createThumbnailImageTransformer(
   const ThumbnailType = `${parentNodeType}Thumbnail`;
 
   return {
-    createSchemaCustomization: ({ actions, schema }) => {
+    createSchemaCustomization: ({ actions, reporter }) => {
       const { createTypes } = actions;
+
+      reporter.info(
+        `[remark-structured-content] Registering thumbnail schema types: ${ThumbnailType} (parent: ${parentNodeType})`
+      );
+
       const typeDefs = `
         type ${parentNodeType} implements Node {
           id: ID!
@@ -86,9 +91,15 @@ export function createThumbnailImageTransformer(
       const [thumbMdASTNode] = context.collected;
 
       if (!thumbMdASTNode) {
-        // No thumbnail image found
+        reporter.verbose(
+          `[remark-structured-content] ThumbnailTransformer: no thumbnail image found for node ${parentGatsbyNode.id}`
+        );
         return;
       }
+
+      reporter.verbose(
+        `[remark-structured-content] ThumbnailTransformer: processing thumbnail "${thumbMdASTNode.url}" for node ${parentGatsbyNode.id}`
+      );
 
       await createGatsbyMarkdownRemarkChildImageNode({
         buildRequestHttpHeaders:
@@ -117,8 +128,9 @@ export function createThumbnailImageTransformer(
       });
 
       if (keepImageInMdAST === true) {
-        // do nothing, keep the node in the AST
+        reporter.verbose(`[remark-structured-content] ThumbnailTransformer: keeping thumbnail in AST as configured`);
       } else {
+        reporter.verbose(`[remark-structured-content] ThumbnailTransformer: removing thumbnail from AST`);
         await removeNodeFromMdAST(thumbMdASTNode);
       }
     },

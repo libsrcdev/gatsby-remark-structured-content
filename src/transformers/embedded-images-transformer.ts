@@ -50,11 +50,11 @@ export function createEmbeddedImageExtractorTransformer(
   const EmbeddedImageType = `${parentNodeType}EmbeddedImage`;
 
   return {
-    createSchemaCustomization: ({ reporter, actions, schema }) => {
+    createSchemaCustomization: ({ reporter, actions, schema }, pluginOptions) => {
       const { createTypes } = actions;
 
       reporter.info(
-        `Creating schema customization for createImageExtractorTransformer (parent: ${parentNodeType})`
+        `[remark-structured-content] Registering embedded image schema types: ${EmbeddedImageType} (parent: ${parentNodeType})`
       );
 
       const typeDefs = [
@@ -75,7 +75,8 @@ export function createEmbeddedImageExtractorTransformer(
       createTypes(typeDefs);
     },
     traverse: (markdownAST, _utils, context) => {
-      getAllImagesFromMarkdownAST(markdownAST).forEach((imageMdastNode) => {
+      const images = getAllImagesFromMarkdownAST(markdownAST);
+      images.forEach((imageMdastNode) => {
         context.collect(imageMdastNode);
       });
     },
@@ -84,8 +85,13 @@ export function createEmbeddedImageExtractorTransformer(
       { createRemoteFileNodeWithFields },
       gatsbyApis
     ) => {
+      const { markdownNode: parentGatsbyNode, reporter } = gatsbyApis;
+
+      reporter.verbose(
+        `[remark-structured-content] EmbeddedImageExtractor: transforming ${context.collected.length} image(s) for node ${parentGatsbyNode.id}`
+      );
+
       for (const imageMdastNode of context.collected) {
-        const { markdownNode: parentGatsbyNode, reporter } = gatsbyApis;
 
         await createGatsbyMarkdownRemarkChildImageNode({
           buildRequestHttpHeaders:

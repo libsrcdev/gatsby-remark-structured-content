@@ -14,11 +14,10 @@ export async function onCreateNode(
       actions: { createNode, createNodeField, ...actions },
       createNodeId,
       getCache,
+      reporter,
     },
     pluginOptions,
   ] = args;
 
-  // your logic here, now fully typed
-  // e.g.:
-  // if (node.internal.type === "MarkdownRemark") { ... }
+  reporter.verbose(`[remark-structured-content] onCreateNode called for node type: ${node.internal.type}`);
 }

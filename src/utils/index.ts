@@ -139,6 +139,8 @@ export async function createGatsbyMarkdownRemarkChildImageNode({
 
   const imageUrl = mdastNode.url || '';
 
+  reporter.verbose(`[remark-structured-content] Processing image node — url: "${imageUrl}", nodeType: ${nodeType}`);
+
   const content = imageUrl;
 
   const contentDigest = createContentDigest(content);
@@ -168,6 +170,7 @@ export async function createGatsbyMarkdownRemarkChildImageNode({
   const relativeImageUrl = resolveRelativeUrl(imageUrl);
 
   if (relativeImageUrl) {
+    reporter.verbose(`[remark-structured-content] Resolving relative image URL: "${relativeImageUrl}"`);
     // gatsby parent file node of this parent-node
     const nearestFileParentNodeDir =
       // try find the nearest parent node of the parentNode of the given Gatsby plugin custom Image Node
@@ -199,13 +202,14 @@ export async function createGatsbyMarkdownRemarkChildImageNode({
       }
     }
 
-    const files = gatsbyApis.getNodesByType('File') as FileSystemNode[];
+    const files = getNodesByType('File') as FileSystemNode[];
 
     const childImageFileNode = files.find(
       (fileNode) => fileNode.absolutePath && fileNode.absolutePath === filePath
     );
 
     if (childImageFileNode) {
+      reporter.verbose(`[remark-structured-content] Found local file node for "${filePath}"`);
       const childImageNode = await createChildImageNode();
 
       createParentChildLink({
@@ -215,9 +219,10 @@ export async function createGatsbyMarkdownRemarkChildImageNode({
     }
 
     reporter.warn(
-      `There is no local file node with absolutePath equals to ${filePath}. Skipping image.`
+      `[remark-structured-content] No local file node found with absolutePath "${filePath}" — skipping image`
     );
   } else if (remoteImageUrl) {
+    reporter.verbose(`[remark-structured-content] Resolving remote image URL: "${remoteImageUrl}"`);
     const childImageNode = await createChildImageNode();
     // Create the File node for the thumbnail image
 
@@ -234,7 +239,7 @@ export async function createGatsbyMarkdownRemarkChildImageNode({
     });
   } else {
     reporter.warn(
-      `The imageUrl ${imageUrl} is neither a relative nor remote imageUrl. Skipping image.`
+      `[remark-structured-content] Image URL "${imageUrl}" is neither relative nor remote — skipping`
     );
   }
 }

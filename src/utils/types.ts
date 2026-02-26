@@ -8,7 +8,7 @@ import type {
 import { visit } from 'unist-util-visit';
 import type { Node as UnistNode } from 'unist';
 import type { Image } from 'mdast';
-import { CustomHttpRequestHeaderOptions } from 'custom-http-headers/http-request-header-options';
+
 // Common parent type for image transformers
 export type TransformerParentType =
   | 'gatsby-transformer-remark'
@@ -17,7 +17,8 @@ export type TransformerParentType =
 
 export interface RemarkStructuredContentTransformer<T = any> {
   createSchemaCustomization?: (
-    args: CreateSchemaCustomizationArgs
+    gatsbyNodeApis: CreateSchemaCustomizationArgs,
+    pluginOptions: RemarkStructuredContentPluginOptions
   ) => void | Promise<void>;
   traverse: (
     markdownAST: UnistNode,
@@ -67,5 +68,5 @@ export interface TransformerContext<T = any> {
 }
 
 export interface RemarkStructuredContentPluginOptions extends PluginOptions {
-  transformers: RemarkStructuredContentTransformer[];
+  transformers?: RemarkStructuredContentTransformer[];
 }

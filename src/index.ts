@@ -25,15 +25,17 @@ export default async function remarkStructuredContentPlugin(
     createNodeId,
   } = remarkPluginApi;
 
-  reporter.info(
-    'Starting remark-structured-content plugin for a markdown node with id: ' +
-      markdownNode.id
+  const { createNode, createNodeField } = actions;
+  const { transformers } = pluginOptions;
+
+  reporter.verbose(
+    `[remark-structured-content] Processing markdown node ${markdownNode.id} with ${transformers?.length ?? 0} transformer(s)`
   );
 
-  const { createNode, createNodeField } = actions;
-  const {
-    transformers,
-  } = pluginOptions;
+  if (!transformers || transformers.length === 0) {
+    reporter.warn(`[remark-structured-content] No transformers configured — nothing to do`);
+    return markdownAST;
+  }
 
   async function createRemoteFileNodeWithFields(
     mdastNode: Image,
@@ -43,7 +45,7 @@ export default async function remarkStructuredContentPlugin(
   ) {
     const imageUrl = mdastNode.url;
 
-    reporter.info(`Saving remote file node for image: ${imageUrl}`);
+    reporter.verbose(`[remark-structured-content] Downloading remote image: ${imageUrl}`);
 
     const fileNode = await createRemoteFileNode({
       url: imageUrl,
@@ -54,8 +56,8 @@ export default async function remarkStructuredContentPlugin(
       httpHeaders,
     });
 
-    reporter.info(
-      `Created file node with id: ${fileNode?.id} for image: ${mdastNode.url}`
+    reporter.verbose(
+      `[remark-structured-content] Created remote file node ${fileNode?.id} for ${mdastNode.url}`
     );
 
     for (const [key, value] of Object.entries(extraFields)) {
@@ -65,7 +67,8 @@ export default async function remarkStructuredContentPlugin(
     return fileNode;
   }
 
-  for (const transformer of transformers) {
+  for (let i = 0; i < transformers.length; i++) {
+    const transformer = transformers[i];
     const context: TransformerContext<any> = {
       collected: [],
       collect(item) {
@@ -74,14 +77,20 @@ export default async function remarkStructuredContentPlugin(
       meta: {},
     };
 
+    reporter.verbose(`[remark-structured-content] Running transformer ${i + 1}/${transformers.length} — traverse phase`);
     transformer.traverse(markdownAST, { visit }, context);
+    reporter.verbose(`[remark-structured-content] Transformer ${i + 1} collected ${context.collected.length} node(s)`);
 
+    reporter.verbose(`[remark-structured-content] Running transformer ${i + 1}/${transformers.length} — transform phase`);
     await transformer.transform(
       context,
       { createRemoteFileNodeWithFields, removeNodeFromMdAST, pluginOptions },
       remarkPluginApi
     );
+    reporter.verbose(`[remark-structured-content] Transformer ${i + 1} — transform phase complete`);
   }
+
+  reporter.verbose(`[remark-structured-content] Finished processing markdown node ${markdownNode.id}`);
 
   return markdownAST;
 }

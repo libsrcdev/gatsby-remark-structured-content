@@ -12,4 +12,6 @@ export async function sourceNodes(
     getNodesByType,
     reporter
   } = gatsbyArgs;
+
+  reporter.verbose(`[remark-structured-content] sourceNodes called`);
 }
